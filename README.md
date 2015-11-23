@@ -60,9 +60,11 @@ argument to `get_storage_engine()` in case you don't want to edit the
 distribution.
 
 
-*Shell:*
+#### Examples of different task engines
 
-Currently the "Shell" engine uses `os.system`, it should be rather easy to
+##### Shell
+
+Currently the `ShellTaskEngine` uses `os.system`, it should be rather easy to
 extend that to use e.g. Popen instead.
 
 ```python
@@ -77,7 +79,11 @@ print("Created task {}".format(id))
 ```
 
 
-*Celery:*
+##### Celery
+
+With `CeleryTaskEngine` you specify the tasks as `module.path:function_name`.
+So if it's possible to import `workers.tasks` and it has the task
+`my_celery_task` in it, you can use the following:
 
 ```python
 from pytasched import get_storage_engine, Task
@@ -88,4 +94,74 @@ engine = get_storage_engine()
 id = engine.add_task(task)
 
 print("Created task {}".format(id))
+```
+
+You can add stuff to your PYTHONPATH easily in the configuration for this
+engine to make this easier.
+
+
+## Task features
+
+There's a few task-specific things available regardless of storage/task engine.
+
+
+### Rescheduling and cancelling
+
+It's fairly convenient to reschedule or cancel tasks. For now you'll have
+to save the ID somewhere yourself or write your own search logic, but I doubt 
+that's going to take a lot of effort.
+ 
+```python
+from pytasched import get_storage_engine
+
+engine = get_storage_engine()
+
+task_id = "abcd1234"
+task = engine.get_task(task_id)
+
+# Rescheduled to now + previously specified delay
+engine.reschedule(task)
+
+# Cancel the task
+engine.remove_task(task_id)
+```
+
+
+### Recurring tasks
+
+If you want a task to be automatically rescheduled after it has been completed,
+there's a convenience feature that does it for you.
+ 
+```python
+from pytasched import get_storage_engine
+
+task = Task("id {name}", kwargs={"name": "root"}, seconds=5, recurring=True)
+engine = get_storage_engine()
+id = engine.add_task(task)
+```
+
+WARNING: It might not be obvious that setting delay to e.g. 5 seconds will NOT
+make the task to be automatically run every 5 seconds. Instead, when the task
+completes it will be rescheduled to be run 5 seconds later. Also there's delays
+between scheduling and execution. If the task takes 5 seconds to run, it will 
+be run roughly every 10 seconds.
+
+
+### Setting delay
+
+You can set the delay in various ways. You can simply set the `wait` time in
+seconds (float precision is ok).
+
+```python
+Task("w", wait=1.5)
+```
+
+Alternatively you can use the various levels of precision to define a time
+delay. The options available are `days`, `hours`, `minutes`, `seconds` and
+`millis`, all are optional, support floats, and you can freely combine them.
+Don't specify the `wait` time if you plan on using these instead.
+
+```python
+# Will be run after 14 days
+Task("w", days=13.5, hours=11.5, minutes=29.5, seconds=29.5, millis=500)
 ```
