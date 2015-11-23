@@ -1,0 +1,4 @@
+.idea
+.virtualenv
+*.pyc
+pytasched/local_settings.py
