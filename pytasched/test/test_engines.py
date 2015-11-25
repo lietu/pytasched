@@ -2,7 +2,7 @@ from unittest2 import TestCase
 from pytasched.engines import _setup_engine, get_storage_engine, \
     get_task_engine, _mongo_item_to_task, _MongoDBCursorWrapper, Engine, \
     StorageEngine, TaskEngine, StorageEngineNotAvailableError, \
-    CeleryTaskEngine, ShellTaskEngine
+    FunctionTaskEngine, ShellTaskEngine
 
 
 class TestFuncs(TestCase):

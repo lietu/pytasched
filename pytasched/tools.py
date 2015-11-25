@@ -1,3 +1,4 @@
+import sys
 import importlib
 from time import time, sleep
 
@@ -86,22 +87,35 @@ def load_from_module(search_definition):
 
     try:
         module = importlib.import_module(module_name)
-    except ImportError:
+    except ImportError as e:
+        paths = filter(None, sys.path)
         raise ValueError(
             "Search definition \"{}\" is not valid. The module specified "
-            "({}) was not found.".format(
-                search_definition, module_name
+            "({}) was not found. Original error: {}".format(
+                search_definition, module_name, str(e)
             )
         )
 
-    try:
-        cls = getattr(module, property_name)
-    except AttributeError:
-        raise ValueError(
-            "Search definition \"{}\" is not valid. The module does not "
-            "contain the specified property.".format(
-                search_definition
+    if "." in property_name:
+        container, attribute = property_name.split(".")
+        try:
+            property = getattr(getattr(module, container), attribute)
+        except AttributeError:
+            raise ValueError(
+                "Search definition \"{}\" is not valid. The module does not "
+                "contain the specified property.".format(
+                    search_definition
+                )
             )
-        )
+    else:
+        try:
+            property = getattr(module, property_name)
+        except AttributeError:
+            raise ValueError(
+                "Search definition \"{}\" is not valid. The module does not "
+                "contain the specified property.".format(
+                    search_definition
+                )
+            )
 
-    return cls
+    return property

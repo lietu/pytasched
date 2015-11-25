@@ -6,9 +6,9 @@ Yet another tool to help maintain scheduled tasks in a centralized manner. The
 core idea is to empower you to schedule tasks how ever much you want into the
 future, using various backend systems for both storage and running the tasks.
 
-The main target is using MongoDB for storage and Celery for running the tasks,
-but it supports other storage engines and e.g. unix shell commands. Extending
-should also be rather easy.
+The main target is using MongoDB for storage and Celery for running the tasks.
+However, extending is rather easy and the "Celery support" is just generic
+Python function call and using it for other purposes should be extreley simple.
 
 Tested with Python 2.7, should work with 3.3+.
 
@@ -79,16 +79,17 @@ print("Created task {}".format(id))
 ```
 
 
-##### Celery
+##### Functions
 
-With `CeleryTaskEngine` you specify the tasks as `module.path:function_name`.
-So if it's possible to import `workers.tasks` and it has the task
-`my_celery_task` in it, you can use the following:
+With `FunctionTaskEngine` you specify the tasks as `module.path:function_name`
+or `module.path:container.attribute`. So if it's possible to import 
+`workers.tasks` and it has the task `my_celery_task` in it, you can use the 
+following:
 
 ```python
 from pytasched import get_storage_engine, Task
 
-task = Task("workers.tasks:my_celery_task", seconds=3)
+task = Task("workers.tasks:my_celery_task.delay", seconds=3)
 
 engine = get_storage_engine()
 id = engine.add_task(task)

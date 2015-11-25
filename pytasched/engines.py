@@ -34,7 +34,8 @@ def get_storage_engine(settings=None):
     Get a storage engine for tasks based on settings
 
     :param module settings: If you want to override global settings
-    :return StorageEngine: Instance of the engine that's already configured
+    :return pytasched.engines.StorageEngine: Instance of the engine that's
+                                             already configured
     """
     if not settings:
         settings = global_settings
@@ -380,17 +381,24 @@ class TaskEngine(Engine):
         raise NotImplementedError()
 
 
-class CeleryTaskEngine(TaskEngine):
+class FunctionTaskEngine(TaskEngine):
     """
-    Forward tasks to Celery workers
+    Forward tasks to Python functions
     """
 
     def __init__(self, params):
-        super(CeleryTaskEngine, self).__init__(params)
+        super(FunctionTaskEngine, self).__init__(params)
+        self.configured = False
 
-        if "paths" in params:
-            for path in params["paths"]:
-                sys.path.append(path)
+    def _setup(self):
+        if not self.configured:
+            if "paths" in self.params:
+                for path in self.params["paths"]:
+                    self.log(DEBUG, "Adding {} to PYTHONPATH".format(path))
+                    sys.path.append(path)
+                    print(sys.path)
+
+            self.configured = True
 
     def run(self, task):
         """
@@ -398,6 +406,8 @@ class CeleryTaskEngine(TaskEngine):
 
         :param pytasched.tasks.Task task:
         """
+
+        self._setup()
 
         runnable = load_from_module(task.task)
         runnable(*task.get_args(), **task.get_kwargs())
