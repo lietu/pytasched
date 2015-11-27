@@ -34,6 +34,9 @@ TASKS = {
 # How many seconds to wait between checks for tasks to be run
 SECONDS_PER_TICK = 1.0
 
+# Auto-reload the app if changes to files are detected
+AUTORELOAD = True
+
 
 try:
     from pytasched.local_settings import *

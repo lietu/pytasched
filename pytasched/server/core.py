@@ -1,5 +1,6 @@
 from pytasched.tools import TickManager
 from pytasched.engines import get_storage_engine, get_task_engine
+from pytasched.autoreload import set_logger, check, add_reload_hook
 
 
 class PytaschedServer(object):
@@ -12,6 +13,7 @@ class PytaschedServer(object):
         self.logger = logger
         self.storageEngine = None
         self.taskEngine = None
+        self.current_lock = None
 
     def _setup(self):
         """
@@ -32,6 +34,15 @@ class PytaschedServer(object):
 
         self.storageEngine.set_logger(self.logger)
         self.taskEngine.set_logger(self.logger)
+        set_logger(self.logger)
+        add_reload_hook(self.release_locks)
+
+    def release_locks(self):
+        """
+        Release any lock being held
+        """
+        if self.current_lock:
+            self.current_lock.unlock()
 
     def run(self):
         """
@@ -42,12 +53,18 @@ class PytaschedServer(object):
 
         tm = TickManager(self.settings.SECONDS_PER_TICK)
 
+        self.logger.info("Waiting for tasks...")
+
         while tm.tick():
+            if self.settings.AUTORELOAD:
+                check()
+
             tasks = self.storageEngine.get_task_list()
 
-            self.logger.debug("Found {} task(s) to process".format(
-                len(tasks)
-            ))
+            if tasks:
+                self.logger.debug("Found {} task(s) to process".format(
+                    len(tasks)
+                ))
 
             for task in tasks:
                 self.logger.info("Running task {} for {}".format(
