@@ -296,7 +296,7 @@ class MongoDBStorageEngine(StorageEngine):
         :return pytasched.tasks.Task:
         """
 
-        self.log(DEBUG, "Getting task {}".format(id))
+        # self.log(DEBUG, "Getting task {}".format(id))
 
         collection = self._get_collection()
 
@@ -316,7 +316,7 @@ class MongoDBStorageEngine(StorageEngine):
         :return list:
         """
 
-        self.log(DEBUG, "Getting task list")
+        # self.log(DEBUG, "Getting task list")
 
         collection = self._get_collection()
 
