@@ -62,12 +62,12 @@ class TestTaskEngine(TestCase):
         pass
 
 
-class TestCeleryTaskEngine(TestCase):
+class TestFunctionTaskEngine(TestCase):
     def test_run(self):
         pass
 
 
-class ShellTaskEngine(TestCase):
+class TestShellTaskEngine(TestCase):
     def test_styles(self):
         pass
 
