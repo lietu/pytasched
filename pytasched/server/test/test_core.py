@@ -4,4 +4,4 @@ from pytasched.server import PytaschedServer
 
 class TestPytaschedServer(TestCase):
     def test_run(self):
-
+        pass
