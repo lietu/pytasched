@@ -1,6 +1,8 @@
 from pytasched.tools import TickManager
 from pytasched.engines import get_storage_engine, get_task_engine
 from pytasched.autoreload import set_logger, check, add_reload_hook
+import pylibmc
+import sherlock
 
 
 class PytaschedServer(object):
@@ -14,6 +16,7 @@ class PytaschedServer(object):
         self.storageEngine = None
         self.taskEngine = None
         self.current_lock = None
+        self.mc_client = None
 
     def _setup(self):
         """
@@ -34,8 +37,16 @@ class PytaschedServer(object):
 
         self.storageEngine.set_logger(self.logger)
         self.taskEngine.set_logger(self.logger)
+
         set_logger(self.logger)
         add_reload_hook(self.release_locks)
+
+        self.mc_client = pylibmc.Client(self.settings.MEMCACHED)
+
+        sherlock.configure(
+            backend=sherlock.backends.MEMCACHED,
+            client=self.mc_client
+        )
 
     def release_locks(self):
         """
@@ -67,14 +78,26 @@ class PytaschedServer(object):
                 ))
 
             for task in tasks:
-                self.logger.info("Running task {} for {}".format(
-                    task.id,
-                    task.task
-                ))
+                name = "scheduler-Task-" + task.id
+                lock = sherlock.Lock(name)
 
-                self.taskEngine.run(task)
+                if lock.acquire(False):
+                    try:
 
-                if task.recurring:
-                    self.storageEngine.reschedule(task)
+                        self.logger.info("Running task {} for {}".format(
+                            task.id,
+                            task.task
+                        ))
+
+                        self.taskEngine.run(task)
+
+                        if task.recurring:
+                            self.storageEngine.reschedule(task, recur=True)
+                        else:
+                            self.storageEngine.remove_task(task.id)
+                    finally:
+                        lock.release()
                 else:
-                    self.storageEngine.remove_task(task.id)
+                    self.logger.info("Someone else is running task {}".format(
+                        task.id
+                    ))

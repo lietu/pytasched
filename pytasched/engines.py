@@ -75,7 +75,8 @@ def _mongo_item_to_task(item):
         args=item["args"],
         kwargs=item["kwargs"],
         wait=item["wait"],
-        recurring=item["recurring"]
+        recurring=item["recurring"],
+        when=item["when"]
     )
 
 
@@ -182,11 +183,13 @@ class StorageEngine(Engine):
         """
         raise NotImplementedError()
 
-    def reschedule(self, task):
+    def reschedule(self, task, recur=False):
         """
         Update task to be rescheduled
 
         :param pytasched.task.Task task:
+        :param bool recur: If this is for recurring and we should try and keep
+                           the same schedule
         """
         raise NotImplementedError()
 
@@ -277,12 +280,14 @@ class MongoDBStorageEngine(StorageEngine):
 
         collection = self._get_collection()
 
+        when = task.when if task.when else self._get_now() + task.wait
+
         result = collection.insert_one({
             "task": task.task,
             "args": task.args,
             "kwargs": task.kwargs,
             "wait": task.wait,
-            "when": self._get_now() + task.wait,
+            "when": when,
             "recurring": task.recurring
         })
 
@@ -328,20 +333,30 @@ class MongoDBStorageEngine(StorageEngine):
 
         return _MongoDBCursorWrapper(tasks)
 
-    def reschedule(self, task):
+    def reschedule(self, task, recur=False):
         """
         Update task to be rescheduled
 
         :param pytasched.task.Task task:
+        :param bool recur: If this is for recurring and we should try and keep
+                           the same schedule
         """
 
-        self.log(INFO, "Rescheduling task {}".format(task.id))
+        if recur:
+            task.when = task.when + task.wait
+        else:
+            task.when = self._get_now() + task.wait
+
+        self.log(INFO, "Rescheduling task {} for {}".format(
+            task.id,
+            task.get_readable_when()
+        ))
 
         collection = self._get_collection()
         result = collection.update_one(
             {"_id": ObjectId(task.id)},
             {"$set": {
-                "when": self._get_now() + task.wait
+                "when": task.when
             }}
         )
 

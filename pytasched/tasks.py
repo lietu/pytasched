@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pytasched.tools import get_duration
 
 
@@ -9,7 +10,7 @@ class Task(object):
 
     def __init__(self, task, args=None, kwargs=None, id=None, wait=None,
                  recurring=False, days=0, hours=0, minutes=0, seconds=0,
-                 millis=0):
+                 millis=0, when=None):
         """
         Create a new task. Should be used with the configured task engine in
         mind.
@@ -32,6 +33,7 @@ class Task(object):
         self.kwargs = kwargs
         self.id = id
         self.recurring = recurring
+        self.when = when
 
         if wait:
             self.wait = wait
@@ -52,6 +54,10 @@ class Task(object):
         """
         return self.kwargs if self.kwargs else {}
 
+    def get_readable_when(self):
+        dt = datetime.utcfromtimestamp(self.when)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
     def __str__(self):
         return '<Task ({})>'.format(json.dumps({
             "id": self.id,
@@ -59,5 +65,6 @@ class Task(object):
             "args": self.args,
             "kwargs": self.kwargs,
             "wait": self.wait,
-            "recurring": self.recurring
+            "recurring": self.recurring,
+            "when": self.when
         }))
