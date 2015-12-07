@@ -1,8 +1,11 @@
 from unittest2 import TestCase
+from mock import Mock
+import mongomock
+from pytasched.tasks import Task
 from pytasched.engines import _setup_engine, get_storage_engine, \
     get_task_engine, _mongo_item_to_task, _MongoDBCursorWrapper, Engine, \
     StorageEngine, TaskEngine, StorageEngineNotAvailableError, \
-    FunctionTaskEngine, ShellTaskEngine
+    FunctionTaskEngine, ShellTaskEngine, MongoDBStorageEngine
 
 
 class TestFuncs(TestCase):
@@ -35,6 +38,14 @@ class TestStorageEngine(TestCase):
 
 
 class TestMongoDBStorageEngine(TestCase):
+    def setUp(self):
+        client = mongomock.MongoClient()
+        params = {
+            "collection": "tasks"
+        }
+
+        self.engine = MongoDBStorageEngine(params, db=client.biddl)
+
     def test_get_db(self):
         pass
 
@@ -55,6 +66,30 @@ class TestMongoDBStorageEngine(TestCase):
 
     def test_remove_task(self):
         pass
+
+    def test_has_task_changed(self):
+        original = Task("foo", seconds=5)
+
+        # Test that if it's not changed it looks fine
+        task_id = self.engine.add_task(original)
+
+        loaded = self.engine.get_task(task_id)
+        self.assertFalse(self.engine.has_task_changed(loaded))
+
+        # Deleting should say it's been changed
+        self.engine.remove_task(task_id)
+        self.assertTrue(self.engine.has_task_changed(loaded))
+
+        task_id = self.engine.add_task(original)
+
+        # Rescheduling should say it's been changed
+        loaded = self.engine.get_task(task_id)
+        loaded2 = self.engine.get_task(task_id)
+
+        self.engine._get_now = Mock(return_value=999999999)
+        self.engine.reschedule(loaded2)
+
+        self.assertTrue(self.engine.has_task_changed(loaded))
 
 
 class TestTaskEngine(TestCase):

@@ -55,6 +55,12 @@ class Task(object):
         return self.kwargs if self.kwargs else {}
 
     def get_readable_when(self):
+        """
+        Get a human readable ISO-8601 timestamp in UTC for when the task is
+        scheduled to be executed.
+
+        :return str:
+        """
         dt = datetime.utcfromtimestamp(self.when)
         return dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -66,5 +72,5 @@ class Task(object):
             "kwargs": self.kwargs,
             "wait": self.wait,
             "recurring": self.recurring,
-            "when": self.when
+            "when": self.get_readable_when()
         }))

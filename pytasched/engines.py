@@ -183,6 +183,15 @@ class StorageEngine(Engine):
         """
         raise NotImplementedError()
 
+    def has_task_changed(self, task):
+        """
+        Check if the task has changed / been deleted since it was loaded.
+
+        :param pytasched.tasks.Task task:
+        :return bool:
+        """
+        raise NotImplementedError()
+
     def reschedule(self, task, recur=False):
         """
         Update task to be rescheduled
@@ -333,6 +342,25 @@ class MongoDBStorageEngine(StorageEngine):
         })
 
         return _MongoDBCursorWrapper(tasks)
+
+    def has_task_changed(self, task):
+        """
+        Check if the task has changed / been deleted since it was loaded.
+
+        :param pytasched.tasks.Task task:
+        :return bool:
+        """
+
+        reloaded = self.get_task(task.id)
+
+        if reloaded is None:
+            return True
+
+        if reloaded.when != task.when:
+            return True
+
+        return False
+
 
     def reschedule(self, task, recur=False):
         """

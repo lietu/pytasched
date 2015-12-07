@@ -5,6 +5,11 @@ import pylibmc
 import sherlock
 
 
+class _TaskChanged(Exception):
+    """Skip a task"""
+    pass
+
+
 class PytaschedServer(object):
     """
     Main server process that monitors for tasks to run and runs them
@@ -83,6 +88,8 @@ class PytaschedServer(object):
 
                 if lock.acquire(False):
                     try:
+                        if self.storageEngine.has_task_changed(task):
+                            raise _TaskChanged()
 
                         self.logger.info("Running task {} for {}".format(
                             task.id,
@@ -95,6 +102,11 @@ class PytaschedServer(object):
                             self.storageEngine.reschedule(task, recur=True)
                         else:
                             self.storageEngine.remove_task(task.id)
+                    except _TaskChanged:
+                        self.logger.info("Seems like task {} was changed, "
+                                         "skipping for now".format(
+                            task.id
+                        ))
                     finally:
                         lock.release()
                 else:
