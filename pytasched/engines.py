@@ -280,14 +280,15 @@ class MongoDBStorageEngine(StorageEngine):
 
         collection = self._get_collection()
 
-        when = task.when if task.when else self._get_now() + task.wait
+        if not task.when:
+            task.when = self._get_now() + task.wait
 
         result = collection.insert_one({
             "task": task.task,
             "args": task.args,
             "kwargs": task.kwargs,
             "wait": task.wait,
-            "when": when,
+            "when": task.when,
             "recurring": task.recurring
         })
 
