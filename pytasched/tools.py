@@ -88,7 +88,6 @@ def load_from_module(search_definition):
     try:
         module = importlib.import_module(module_name)
     except ImportError as e:
-        paths = filter(None, sys.path)
         raise ValueError(
             "Search definition \"{}\" is not valid. The module specified "
             "({}) was not found. Original error: {}".format(
