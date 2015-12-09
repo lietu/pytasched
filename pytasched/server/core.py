@@ -1,8 +1,13 @@
 from pytasched.tools import TickManager
 from pytasched.engines import get_storage_engine, get_task_engine
 from pytasched.autoreload import set_logger, check, add_reload_hook
-import pylibmc
-import sherlock
+
+try:
+    import pylibmc
+    import sherlock
+except ImportError:
+    pylibmc = None
+    sherlock = None
 
 
 class _TaskChanged(Exception):
@@ -46,12 +51,21 @@ class PytaschedServer(object):
         set_logger(self.logger)
         add_reload_hook(self.release_locks)
 
-        self.mc_client = pylibmc.Client(self.settings.MEMCACHED)
+        if self.settings.USE_SHERLOCK:
+            if pylibmc is None:
+                raise ImportError("Failed to load pylibmc for Sherlock use")
 
-        sherlock.configure(
-            backend=sherlock.backends.MEMCACHED,
-            client=self.mc_client
-        )
+            self.mc_client = pylibmc.Client(self.settings.MEMCACHED)
+
+            if sherlock is None:
+                raise ImportError("Failed to load sherlock for locks")
+
+            sherlock.configure(
+                backend=sherlock.backends.MEMCACHED,
+                client=self.mc_client
+            )
+
+            self.logger.debug("Initialized Sherlock for locking via Memcached")
 
     def release_locks(self):
         """
@@ -71,6 +85,9 @@ class PytaschedServer(object):
 
         self.logger.info("Waiting for tasks...")
 
+        no_locks = self.settings.USE_SHERLOCK is False
+        lock = None
+
         while tm.tick():
             if self.settings.AUTORELOAD:
                 check()
@@ -83,10 +100,12 @@ class PytaschedServer(object):
                 ))
 
             for task in tasks:
-                name = "scheduler-Task-" + task.id
-                lock = sherlock.Lock(name)
+                name = "PyTaSched-Task-" + task.id
 
-                if lock.acquire(False):
+                if not no_locks:
+                    lock = sherlock.Lock(name)
+
+                if no_locks or lock.acquire(False):
                     try:
                         if self.storageEngine.has_task_changed(task):
                             raise _TaskChanged()
@@ -103,13 +122,14 @@ class PytaschedServer(object):
                         else:
                             self.storageEngine.remove_task(task.id)
                     except _TaskChanged:
-                        self.logger.info("Seems like task {} was changed, "
+                        self.logger.debug("Seems like task {} was changed, "
                                          "skipping for now".format(
                             task.id
                         ))
                     finally:
-                        lock.release()
+                        if not no_locks:
+                            lock.release()
                 else:
-                    self.logger.info("Someone else is running task {}".format(
+                    self.logger.debug("Someone else is running task {}".format(
                         task.id
                     ))

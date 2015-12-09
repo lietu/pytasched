@@ -30,7 +30,10 @@ TASKS = {
     }
 }
 
-# Addresses to Memcached servers
+# If we should use Sherlock for memcached based locks
+USE_SHERLOCK = False
+
+# Addresses to Memcached servers, not needed if above is False
 MEMCACHED = [
     "127.0.0.1:11211"
 ]
