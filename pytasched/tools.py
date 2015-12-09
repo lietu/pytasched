@@ -1,4 +1,3 @@
-import sys
 import importlib
 from time import time, sleep
 

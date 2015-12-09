@@ -3,7 +3,6 @@ import sys
 from time import time
 from copy import copy
 from logging import DEBUG, INFO
-
 from pytasched import settings as global_settings
 from pytasched.errors import StorageEngineNotAvailableError, TaskEngineError
 from pytasched.tools import load_from_module
@@ -357,7 +356,6 @@ class MongoDBStorageEngine(StorageEngine):
 
         return False
 
-
     def reschedule(self, task, recur=False):
         """
         Update task to be rescheduled
@@ -386,7 +384,6 @@ class MongoDBStorageEngine(StorageEngine):
         )
 
         return bool(result.modified_count)
-
 
     def remove_task(self, id):
         """

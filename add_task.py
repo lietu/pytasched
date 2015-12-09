@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from argparse import ArgumentParser
 from pytasched import get_storage_engine, Task
-from datetime import datetime
 
 if __name__ == "__main__":
     ap = ArgumentParser()

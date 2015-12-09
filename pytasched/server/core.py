@@ -122,10 +122,10 @@ class PytaschedServer(object):
                         else:
                             self.storageEngine.remove_task(task.id)
                     except _TaskChanged:
-                        self.logger.debug("Seems like task {} was changed, "
-                                         "skipping for now".format(
-                            task.id
-                        ))
+                        self.logger.debug(
+                            "Seems like task {} was changed, "
+                            "skipping for now".format(task.id)
+                        )
                     finally:
                         if not no_locks:
                             lock.release()
