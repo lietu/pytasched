@@ -8,7 +8,7 @@ future, using various backend systems for both storage and running the tasks.
 
 The main target is using MongoDB for storage and Celery for running the tasks.
 However, extending is rather easy and the "Celery support" is just generic
-Python function call and using it for other purposes should be extreley simple.
+Python function call and using it for other purposes should be extremely simple.
 
 Tested with Python 2.7, should work with 3.3+.
 
@@ -19,7 +19,8 @@ Licensed under MIT and new BSD licenses, more details in `LICENSE.txt`.
  
 There really aren't any dependencies other than what's required for the engines
 you want to use. For MongoDB storage you need `pymongo`, and for Celery tasks
-you need `celery` installed.
+you need `celery` installed. There's also optional locking with Sherlock if
+you are going to run multiple instances.
 
 Anyway to install everything supported by the basic system, just run:
 
@@ -141,11 +142,17 @@ engine = get_storage_engine()
 id = engine.add_task(task)
 ```
 
-WARNING: It might not be obvious that setting delay to e.g. 5 seconds will NOT
-make the task to be automatically run every 5 seconds. Instead, when the task
-completes it will be rescheduled to be run 5 seconds later. Also there's delays
-between scheduling and execution. If the task takes 5 seconds to run, it will 
-be run roughly every 10 seconds.
+You can also set it to recur at a specific interval starting at a specific time
+by also defining `when`.
+
+```python
+from pytasched import get_storage_engine
+from time import time
+
+task = Task("id {}", args=[root], seconds=15, when=time() + 60, recurring=True)
+engine = get_storage_engine()
+id = engine.add_task(task)
+```
 
 
 ### Setting delay
