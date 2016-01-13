@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from pytasched.tools import get_duration
+import pytasched
 
 
 class Task(object):
@@ -63,6 +64,25 @@ class Task(object):
         """
         dt = datetime.utcfromtimestamp(self.when)
         return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    def add(self):
+        """
+        Add this Task to the default storage engine and return it's ID
+        :return str: ID
+        """
+
+        engine = pytached.get_storage_engine()
+        self.id = engine.add_task(self)
+        return self.id
+
+    def remove(self):
+        """
+        Remove this Task from the default storage engine
+        :return bool:
+        """
+
+        engine = pytached.get_storage_engine()
+        return engine.remove_task(self.id)
 
     def __str__(self):
         return '<Task ({})>'.format(json.dumps({
