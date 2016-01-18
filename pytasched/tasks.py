@@ -71,7 +71,7 @@ class Task(object):
         :return str: ID
         """
 
-        engine = pytached.get_storage_engine()
+        engine = pytasched.get_storage_engine()
         self.id = engine.add_task(self)
         return self.id
 
@@ -81,7 +81,7 @@ class Task(object):
         :return bool:
         """
 
-        engine = pytached.get_storage_engine()
+        engine = pytasched.get_storage_engine()
         return engine.remove_task(self.id)
 
     def __str__(self):
