@@ -1,4 +1,5 @@
-from unittest2 import TestCase
+from __future__ import unicode_literals
+from unittest import TestCase
 from pytasched.tools import get_duration, load_from_module, TickManager
 
 
@@ -11,11 +12,7 @@ class TestTools(TestCase):
         self.assertEqual(get_duration(millis=1500.5), 1.5005)
 
         combined = get_duration(
-            days=1.5,
-            hours=1.5,
-            minutes=1.5,
-            seconds=1.5,
-            millis=1.5
+            days=1.5, hours=1.5, minutes=1.5, seconds=1.5, millis=1.5
         )
 
         expected = (1.5 * 86400) + (1.5 * 3600) + (1.5 * 60) + 1.5 + 0.0015
@@ -23,7 +20,7 @@ class TestTools(TestCase):
         self.assertEqual(combined, expected)
 
     def test_load_from_module(self):
-        tc = load_from_module("unittest2:TestCase")
+        tc = load_from_module("unittest:TestCase")
         self.assertEqual(tc, TestCase)
 
     def test_TickManager(self):

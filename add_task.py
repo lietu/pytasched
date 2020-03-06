@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from builtins import str
 from argparse import ArgumentParser
 from pytasched import get_storage_engine, Task
 
@@ -6,13 +8,16 @@ if __name__ == "__main__":
     ap = ArgumentParser()
 
     ap.add_argument("task", help="Task to be run, module.path:function")
-    ap.add_argument("--seconds", type=float,
-                    help="In how many seconds to run the task at, if"
-                         "recurring determines the frequency.")
-    ap.add_argument("--when", type=float,
-                    help="The Unix timestamp for when to run the task")
-    ap.add_argument("--recurring", action="store_true",
-                    help="Make the task recurring")
+    ap.add_argument(
+        "--seconds",
+        type=float,
+        help="In how many seconds to run the task at, if"
+        "recurring determines the frequency.",
+    )
+    ap.add_argument(
+        "--when", type=float, help="The Unix timestamp for when to run the task"
+    )
+    ap.add_argument("--recurring", action="store_true", help="Make the task recurring")
     ap.add_argument("--args", help="Comma separated list of arguments")
     ap.set_defaults(recurring=False, args=[])
 
@@ -29,7 +34,7 @@ if __name__ == "__main__":
         args=options.args.split(","),
         recurring=options.recurring,
         seconds=options.seconds if options.seconds else 0,
-        when=options.when
+        when=options.when,
     )
 
     # Schedule and reload

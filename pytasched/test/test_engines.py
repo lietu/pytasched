@@ -1,11 +1,11 @@
-from unittest2 import TestCase
-from mock import Mock
+from __future__ import unicode_literals
+
 import mongomock
+from mock import Mock
+from unittest import TestCase
+
+from pytasched.engines import MongoDBStorageEngine
 from pytasched.tasks import Task
-from pytasched.engines import _setup_engine, get_storage_engine, \
-    get_task_engine, _mongo_item_to_task, _MongoDBCursorWrapper, Engine, \
-    StorageEngine, TaskEngine, StorageEngineNotAvailableError, \
-    FunctionTaskEngine, ShellTaskEngine, MongoDBStorageEngine
 
 
 class TestFuncs(TestCase):
@@ -40,11 +40,9 @@ class TestStorageEngine(TestCase):
 class TestMongoDBStorageEngine(TestCase):
     def setUp(self):
         client = mongomock.MongoClient()
-        params = {
-            "collection": "tasks"
-        }
+        params = {"collection": "tasks"}
 
-        self.engine = MongoDBStorageEngine(params, db=client.biddl)
+        self.engine = MongoDBStorageEngine(params, db=client.blidz)
 
     def test_get_db(self):
         pass

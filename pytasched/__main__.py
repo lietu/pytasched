@@ -1,7 +1,8 @@
+from __future__ import unicode_literals
 import logging
 
 from pytasched.server import PytaschedServer
-from pytasched import settings
+import settings
 
 
 def _get_logger():
@@ -15,9 +16,7 @@ def _get_logger():
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
 
-    ch.setFormatter(
-        logging.Formatter('%(asctime)s [%(levelname)8s] %(message)s')
-    )
+    ch.setFormatter(logging.Formatter("%(asctime)s [%(levelname)8s] %(message)s"))
 
     logger.addHandler(ch)
     logger.setLevel(logging.DEBUG)

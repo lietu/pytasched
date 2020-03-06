@@ -4,6 +4,7 @@ autoreload module, simplified to not depend on Tornado.
 
 https://github.com/tornadoweb/tornado/blob/master/tornado/autoreload.py
 """
+from __future__ import unicode_literals
 
 import os
 import sys
@@ -22,7 +23,7 @@ except ImportError:
 # close the IOLoop and all its file descriptors, to guard against any
 # file descriptors that were not set CLOEXEC. When execv is not available,
 # we must not close the IOLoop because we want the process to exit cleanly.
-_has_execv = sys.platform != 'win32'
+_has_execv = sys.platform != "win32"
 
 _reload_attempted = False
 _modify_times = {}
@@ -102,11 +103,11 @@ def _reload():
     # string, we were (probably) invoked with -m and the effective path
     # is about to change on re-exec.  Add the current directory to $PYTHONPATH
     # to ensure that the new process sees the same path we did.
-    path_prefix = '.' + os.pathsep
-    if (sys.path[0] == '' and
-            not os.environ.get("PYTHONPATH", "").startswith(path_prefix)):
-        os.environ["PYTHONPATH"] = (path_prefix +
-                                    os.environ.get("PYTHONPATH", ""))
+    path_prefix = "." + os.pathsep
+    if sys.path[0] == "" and not os.environ.get("PYTHONPATH", "").startswith(
+        path_prefix
+    ):
+        os.environ["PYTHONPATH"] = path_prefix + os.environ.get("PYTHONPATH", "")
     if not _has_execv:
         subprocess.Popen([sys.executable] + sys.argv)
         sys.exit(0)
@@ -125,8 +126,7 @@ def _reload():
             # Unfortunately the errno returned in this case does not
             # appear to be consistent, so we can't easily check for
             # this error specifically.
-            os.spawnv(os.P_NOWAIT, sys.executable,
-                      [sys.executable] + sys.argv)
+            os.spawnv(os.P_NOWAIT, sys.executable, [sys.executable] + sys.argv)
             # At this point the IOLoop has been closed and finally
             # blocks will experience errors if we allow the stack to
             # unwind, so just exit uncleanly.

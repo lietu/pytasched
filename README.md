@@ -17,15 +17,10 @@ Licensed under MIT and new BSD licenses, more details in `LICENSE.txt`.
 
 ## Dependencies
  
-There really aren't any dependencies other than what's required for the engines
-you want to use. For MongoDB storage you need `pymongo`, and for Celery tasks
-you need `celery` installed. There's also optional locking with Sherlock if
-you are going to run multiple instances.
+You can install the dependencies easily with [poetry](https://python-poetry.org):
 
-Anyway to install everything supported by the basic system, just run:
-
-```
-pip install -r requirements.txt
+```bash
+poetry install
 ```
 
 
@@ -42,13 +37,69 @@ To run the server you probably want to use something like
 [Supervisor](http://supervisord.org/) to make sure it's always up and gets
 restarted in case of errors, etc.
 
-Running the server itself is rather easy, just set up an environment with
-[Virtualenv](http://docs.python-guide.org/en/latest/dev/virtualenvs/) that
-has all the requirements installed, and simply run:
+However, to launch it for testing purposes just run
 
 ```
-python -m pytasched
+poetry run python -m pytasched
 ```
+
+
+## Deploying to Kubernetes
+
+For Kubernetes you should create the necessary secrets in advance:
+
+```bash
+kubectl create secret generic pytasched-secrets "--from-literal=MONGODB_CONNECTION_STRING=mongodb://localhost"
+```
+
+You might want to use [sealed-secrets](https://github.com/bitnami-labs/sealed-secrets) to manage them safely.
+
+Check out the `pytasched-config` in `kube_example/pytasched.yaml` for configuration options.
+
+If you're going to need to call code from Celery, copy the relevant code to the Docker container by e.g. prior to running `docker build` copying the content as subfolders here, then modify the `Dockerfile` or `docker-runtime-entrypoint.sh` to append `PYTHONPATH` appropriately. If you use a custom Docker build, update the image in `kube_example/pytasched.yaml` appropriately.
+
+E.g. if you have Celery workers in a package called `workers`, you could do something like
+
+```bash
+# In Dockerfile's runtime environment add
+ENV PYTHONPATH="workers"
+
+# build.sh
+cp -r ../workers .
+docker build . -t pytasched
+```
+
+You will likely have to update the image in the Kubernetes deployment to point to your private registry.
+
+
+### Minikube
+
+For local testing and development, you can use [minikube](https://github.com/kubernetes/minikube), and ensure your Docker environment is configured appropriately:
+
+```bash
+minikube docker-env
+# and follow instructions
+```
+
+Then you can build the Docker image:
+
+```bash
+docker build . -t pytasched
+```
+
+And either run the image as is:
+
+```bash
+docker run --rm -e "MONGODB_CONNECTION_STRING=mongodb://..." -it pytasched
+```
+
+Or deploy it in your Kubernetes
+
+```bash
+kubectl apply -f kube_example/pytasched.yaml
+```
+
+In minikube you should see 1/2 pods launching successfully - the other will refuse to launch because in minikube you only have one host node, and there is little benefit in running more than 1 instance per host pod.
 
 
 ### Client

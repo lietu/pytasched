@@ -1,4 +1,7 @@
-from unittest2 import TestCase
+from __future__ import unicode_literals
+
+from unittest import TestCase
+
 from pytasched.tasks import Task
 
 

@@ -1,0 +1,67 @@
+apiVersion: v1
+data:
+  LOCKS: "shylock"
+  MONGODB_COLLECTION: "pytasched_tasks"
+  MONGODB_DATABASE: "pytasched"
+  SECONDS_PER_TICK: "1.0"
+kind: ConfigMap
+metadata:
+  name: pytasched-config
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pytasched
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pytasched
+  template:
+    metadata:
+      labels:
+        app: pytasched
+    spec:
+      # Anti-affinity to stop more than 1 instance from running on the same host node at the same time
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - pytasched
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: pytasched
+          imagePullPolicy: IfNotPresent
+          image: pytasched:latest  # You might want to point this to your private repository
+          env:
+            - name: LOCKS
+              valueFrom:
+                configMapKeyRef:
+                  name: pytasched-config
+                  key: LOCKS
+            - name: MONGODB_COLLECTION
+              valueFrom:
+                configMapKeyRef:
+                  name: pytasched-config
+                  key: MONGODB_COLLECTION
+            - name: MONGODB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: pytasched-secrets
+                  key: MONGODB_CONNECTION_STRING
+            - name: MONGODB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: pytasched-config
+                  key: MONGODB_DATABASE
+            - name: SECONDS_PER_TICK
+              valueFrom:
+                configMapKeyRef:
+                  name: pytasched-config
+                  key: SECONDS_PER_TICK

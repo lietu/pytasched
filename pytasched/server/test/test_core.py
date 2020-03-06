@@ -1,7 +1,6 @@
-from unittest2 import TestCase
+from __future__ import unicode_literals
 from pytasched.server import PytaschedServer
 
 
-class TestPytaschedServer(TestCase):
-    def test_run(self):
-        pass
+def test_PytaschedServer():
+    assert PytaschedServer is not None

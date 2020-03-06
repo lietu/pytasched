@@ -1,12 +1,19 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import sys
-from time import time
+from builtins import next
+from builtins import object
+from builtins import str
 from copy import copy
 from logging import DEBUG, INFO
-from pytasched import settings as global_settings
+from time import time
+
+import settings as global_settings
 from pytasched.errors import StorageEngineNotAvailableError, TaskEngineError
-from pytasched.tools import load_from_module
 from pytasched.tasks import Task
+from pytasched.tools import load_from_module
 
 try:
     import pymongo
@@ -39,10 +46,7 @@ def get_storage_engine(settings=None):
     if not settings:
         settings = global_settings
 
-    return _setup_engine(
-        settings.STORAGE["engine"],
-        settings.STORAGE["params"]
-    )
+    return _setup_engine(settings.STORAGE["engine"], settings.STORAGE["params"])
 
 
 def get_task_engine(settings=None):
@@ -55,10 +59,7 @@ def get_task_engine(settings=None):
     if not settings:
         settings = global_settings
 
-    return _setup_engine(
-        settings.TASKS["engine"],
-        settings.TASKS["params"]
-    )
+    return _setup_engine(settings.TASKS["engine"], settings.TASKS["params"])
 
 
 def _mongo_item_to_task(item):
@@ -75,7 +76,7 @@ def _mongo_item_to_task(item):
         kwargs=item["kwargs"],
         wait=item["wait"],
         recurring=item["recurring"],
-        when=item["when"]
+        when=item["when"],
     )
 
 
@@ -100,8 +101,8 @@ class _MongoDBCursorWrapper(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        return _mongo_item_to_task(self.cursor.next())
+    def __next__(self):
+        return _mongo_item_to_task(next(self.cursor))
 
 
 class Engine(object):
@@ -218,20 +219,11 @@ class MongoDBStorageEngine(StorageEngine):
         if not self._db:
             self.log(DEBUG, "Connecting to MongoDB")
 
-            if self.params["replica_set"]:
-                client = pymongo.MongoClient(
-                    self.params["host"],
-                    self.params["port"],
-                    replicaSet=self.params["replica_set"],
-                )
-            else:
-                client = pymongo.MongoClient(
-                    self.params["host"],
-                    self.params["port"]
-                )
+            params = copy(self.params)
+            del params["indices"]
 
-            self._db = getattr(client, self.params["database"])
-
+            client = pymongo.MongoClient(**params)
+            self._db = getattr(client, global_settings.MONGODB_DATABASE)
             self.setup()
 
         return self._db
@@ -242,7 +234,7 @@ class MongoDBStorageEngine(StorageEngine):
         :return pymongo.collection.Collection:
         """
         db = self._get_db()
-        return getattr(db, self.params["collection"])
+        return getattr(db, global_settings.MONGODB_COLLECTION)
 
     def _get_now(self):
         """
@@ -275,6 +267,7 @@ class MongoDBStorageEngine(StorageEngine):
 
             options = indices[index]
             collection.create_index(index, *options)
+            self.log(DEBUG, "Done.")
 
     def add_task(self, task):
         """
@@ -291,14 +284,16 @@ class MongoDBStorageEngine(StorageEngine):
         if not task.when:
             task.when = self._get_now() + task.wait
 
-        result = collection.insert_one({
-            "task": task.task,
-            "args": task.args,
-            "kwargs": task.kwargs,
-            "wait": task.wait,
-            "when": task.when,
-            "recurring": task.recurring
-        })
+        result = collection.insert_one(
+            {
+                "task": task.task,
+                "args": task.args,
+                "kwargs": task.kwargs,
+                "wait": task.wait,
+                "when": task.when,
+                "recurring": task.recurring,
+            }
+        )
 
         return str(result.inserted_id)
 
@@ -312,9 +307,7 @@ class MongoDBStorageEngine(StorageEngine):
 
         collection = self._get_collection()
 
-        item = collection.find_one({
-            "_id": ObjectId(id)
-        })
+        item = collection.find_one({"_id": ObjectId(id)})
 
         if item:
             return _mongo_item_to_task(item)
@@ -332,9 +325,7 @@ class MongoDBStorageEngine(StorageEngine):
 
         now = self._get_now()
 
-        tasks = collection.find({
-            "when": {"$lt": now}
-        })
+        tasks = collection.find({"when": {"$lt": now}})
 
         return _MongoDBCursorWrapper(tasks)
 
@@ -370,17 +361,14 @@ class MongoDBStorageEngine(StorageEngine):
         else:
             task.when = self._get_now() + task.wait
 
-        self.log(INFO, "Rescheduling task {} for {}".format(
-            task.id,
-            task.get_readable_when()
-        ))
+        self.log(
+            INFO,
+            "Rescheduling task {} for {}".format(task.id, task.get_readable_when()),
+        )
 
         collection = self._get_collection()
         result = collection.update_one(
-            {"_id": ObjectId(task.id)},
-            {"$set": {
-                "when": task.when
-            }}
+            {"_id": ObjectId(task.id)}, {"$set": {"when": task.when}}
         )
 
         return bool(result.modified_count)
@@ -433,7 +421,6 @@ class FunctionTaskEngine(TaskEngine):
                 for path in self.params["paths"]:
                     self.log(DEBUG, "Adding {} to PYTHONPATH".format(path))
                     sys.path.append(path)
-                    print(sys.path)
 
             self.configured = True
 
@@ -464,9 +451,9 @@ class ShellTaskEngine(TaskEngine):
             raise TaskEngineError("Shell style not defined")
 
         if not params["style"] in self.STYLES:
-            raise TaskEngineError("Shell style {} not supported".format(
-                params["style"]
-            ))
+            raise TaskEngineError(
+                "Shell style {} not supported".format(params["style"])
+            )
 
     def run(self, task):
         """
@@ -485,8 +472,6 @@ class ShellTaskEngine(TaskEngine):
         :param pytasched.tasks.Task task:
         :return:
         """
-
-        print(task)
 
         cmd = task.task.format(*task.get_args(), **task.get_kwargs())
 

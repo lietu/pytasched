@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import unicode_literals
+from builtins import str
+from builtins import object
 import importlib
 from time import time, sleep
 
@@ -32,7 +36,7 @@ class TickManager(object):
 
     def __init__(self, seconds_per_tick):
         self.seconds_per_tick = seconds_per_tick
-        self.sleep_duration = seconds_per_tick / 10
+        self.sleep_duration = seconds_per_tick / 10.0
         self.running = True
         self.last_tick = 0
 
@@ -80,15 +84,15 @@ def load_from_module(search_definition):
     try:
         module_name, property_name = search_definition.split(":")
     except:
-        raise ValueError("Search definition \"{}\" is not valid.".format(
-            search_definition
-        ))
+        raise ValueError(
+            'Search definition "{}" is not valid.'.format(search_definition)
+        )
 
     try:
         module = importlib.import_module(module_name)
     except ImportError as e:
         raise ValueError(
-            "Search definition \"{}\" is not valid. The module specified "
+            'Search definition "{}" is not valid. The module specified '
             "({}) was not found. Original error: {}".format(
                 search_definition, module_name, str(e)
             )
@@ -100,20 +104,16 @@ def load_from_module(search_definition):
             property = getattr(getattr(module, container), attribute)
         except AttributeError:
             raise ValueError(
-                "Search definition \"{}\" is not valid. The module does not "
-                "contain the specified property.".format(
-                    search_definition
-                )
+                'Search definition "{}" is not valid. The module does not '
+                "contain the specified property.".format(search_definition)
             )
     else:
         try:
             property = getattr(module, property_name)
         except AttributeError:
             raise ValueError(
-                "Search definition \"{}\" is not valid. The module does not "
-                "contain the specified property.".format(
-                    search_definition
-                )
+                'Search definition "{}" is not valid. The module does not '
+                "contain the specified property.".format(search_definition)
             )
 
     return property

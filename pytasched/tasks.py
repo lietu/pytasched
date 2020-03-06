@@ -1,7 +1,11 @@
+from __future__ import unicode_literals
+
 import json
+from builtins import object
 from datetime import datetime
-from pytasched.tools import get_duration
+
 import pytasched
+from pytasched.tools import get_duration
 
 
 class Task(object):
@@ -9,9 +13,21 @@ class Task(object):
     Container for all task specific information
     """
 
-    def __init__(self, task, args=None, kwargs=None, id=None, wait=None,
-                 recurring=False, days=0, hours=0, minutes=0, seconds=0,
-                 millis=0, when=None):
+    def __init__(
+        self,
+        task,
+        args=None,
+        kwargs=None,
+        id=None,
+        wait=None,
+        recurring=False,
+        days=0,
+        hours=0,
+        minutes=0,
+        seconds=0,
+        millis=0,
+        when=None,
+    ):
         """
         Create a new task. Should be used with the configured task engine in
         mind.
@@ -85,12 +101,16 @@ class Task(object):
         return engine.remove_task(self.id)
 
     def __str__(self):
-        return '<Task ({})>'.format(json.dumps({
-            "id": self.id,
-            "task": self.task,
-            "args": self.args,
-            "kwargs": self.kwargs,
-            "wait": self.wait,
-            "recurring": self.recurring,
-            "when": self.get_readable_when()
-        }))
+        return "<Task ({})>".format(
+            json.dumps(
+                {
+                    "id": self.id,
+                    "task": self.task,
+                    "args": self.args,
+                    "kwargs": self.kwargs,
+                    "wait": self.wait,
+                    "recurring": self.recurring,
+                    "when": self.get_readable_when(),
+                }
+            )
+        )
