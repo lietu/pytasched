@@ -1,4 +1,6 @@
 # PyTaSched
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flietu%2Fpytasched.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Flietu%2Fpytasched?ref=badge_shield)
+
 
 The name is short for Python Task Scheduler.
 
@@ -224,3 +226,7 @@ Don't specify the `wait` time if you plan on using these instead.
 # Will be run after 14 days
 Task("w", days=13.5, hours=11.5, minutes=29.5, seconds=29.5, millis=500)
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flietu%2Fpytasched.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Flietu%2Fpytasched?ref=badge_large)
